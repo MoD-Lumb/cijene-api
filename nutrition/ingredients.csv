@@ -1,0 +1,98 @@
+id,name,food_group,meal_role,state,kcal,protein,carbs,fat,grams_per_piece,ml_to_g,preference,source,note
+teletina,Teletina,meso,Proteini,raw,110,20.5,0,3,,,green,USDA (approx.),Excel 172/24/0/7.6 = cooked; replaced with raw
+junetina,Junetina,meso,Proteini,raw,137,21.4,0,5,,,green,USDA (approx.),Excel 169/28/0/6.5 = cooked; raw lean (95 %) mince
+puretina,Puretina (prsa),meso,Proteini,raw,114,23.7,0,1.5,,,green,USDA (approx.),Excel 117/24/0/2 (already ~raw)
+piletina,Piletina (prsa),meso,Proteini,raw,120,22.5,0,2.6,,,green,USDA (approx.),Excel 173/31/0/3.6 = cooked; replaced with raw
+svinjetina,Svinjetina (file),meso,Proteini,raw,120,21,0,3.5,,,green,USDA (approx.),Excel 143/26/0/3.5 = cooked; replaced with raw
+prsut,Pršut,meso,Proteini,ready,193,28,0,12,,,green,Excel v4,CHECK: kcal doesn't match macros (calc 220)
+losos,Losos,riba,Proteini,raw,208,20.4,0,13.4,,,green,USDA (approx.),Excel 206/22/0/13 (already ~raw)
+tuna-konzerva,Tuna (konzerva),riba,Proteini,ready,166,28,0,8,,,green,Excel v4,CHECK: in oil or water? In water ≈ 116/26/0/1
+tuna,Tuna (svježa),riba,Proteini,raw,145,26,0,3.4,,,green,Excel v4,≈ raw bluefin; yellowfin raw ≈ 109/24/0/0.5
+morski-plodovi,Morski plodovi,riba,Proteini,raw,105,20,0,2,,,green,Excel v4,
+svjezi-sir,Svježi sir,mliječni,Proteini,ready,98,11,3,4.3,,,green,Excel v4,
+jaje,Jaje,jaja,Proteini,raw,143,12.6,0.7,9.5,55,,green,USDA (approx.),"Excel unit 'kom' but values were per 100 g; 1 egg (M, no shell) ≈ 55 g ≈ 79 kcal"
+tofu,Tofu,biljni protein,Proteini,ready,76,8,2,5,,,green,Excel v4,
+tempeh,Tempeh,biljni protein,Proteini,ready,193,20,7,11,,,green,Excel v4,
+seitan,Seitan,biljni protein,Proteini,ready,143,21,5,2,,,green,Excel v4,CHECK: kcal doesn't match macros (calc 122)
+zobene-pahuljice,Zobene pahuljice,žitarice,Ugljikohidrati,dry,389,17,66,7,,,green,Excel v4,
+integralni-kruh,Integralni kruh,žitarice,Ugljikohidrati,ready,247,14,42,3,,,green,Excel v4,
+integralne-palacinke,Integralne palačinke,žitarice,Ugljikohidrati,ready,220,6,34,6,,,green,Excel v4,
+kvinoja,Kvinoja,žitarice,Ugljikohidrati,dry,368,15,64,6,,,green,Excel v4,
+kukuruz,Kukuruz (zrno/brašno),žitarice,Ugljikohidrati,dry,365,10,74,4,,,green,Excel v4,
+tortilja,Tortilja,žitarice,Ugljikohidrati,ready,316,18,43,8,80,,green,Excel v4,Merged with 'Tortilla' (kom = 80 g × 316/100 = 252.8)
+amarant,Amarant,žitarice,Ugljikohidrati,dry,371,14,65,7,,,green,Excel v4,
+integralna-tjestenina,Integralna tjestenina,žitarice,Ugljikohidrati,dry,348,13,72,2,,,green,Excel v4,
+heljda,Heljda,žitarice,Ugljikohidrati,dry,343,13,72,3,,,green,Excel v4,
+cous-cous,Cous-cous,žitarice,Ugljikohidrati,dry,376,13,77,0,,,green,Excel v4,
+riza,Riža,žitarice,Ugljikohidrati,dry,365,7,80,0,,,green,Excel v4,
+jecam,Ječam,žitarice,Ugljikohidrati,dry,354,13,74,2,,,green,Excel v4,
+palenta,Palenta,žitarice,Ugljikohidrati,dry,370,7,80,1,,,green,Excel v4,
+proso,Proso,žitarice,Ugljikohidrati,dry,378,11,73,4,,,green,Excel v4,
+pir,Pir,žitarice,Ugljikohidrati,dry,338,15,71,2,,,green,Excel v4,
+batat,Batat,gomolji,Ugljikohidrati,raw,86,2,20,0,,,green,Excel v4,
+njoki,Njoki,gomolji,Ugljikohidrati,ready,130,3,26,0,,,green,Excel v4,
+krumpir,Krumpir,gomolji,Ugljikohidrati,raw,77,2,17,0.1,,,green,USDA (approx.),Excel UH 20 (calc didn't match kcal)
+grah,Grah,mahunarke,Povrće,dry,347,21,62,0,,,green,Excel v4,
+leca,Leća,mahunarke,Povrće,dry,352,26,60,0,,,green,Excel v4,
+bob,Bob,mahunarke,Povrće,dry,341,26,58,0,,,green,Excel v4,
+grasak,Grašak,povrće,Povrće,raw,81,5,15,0,,,green,Excel v4,
+mahune,Mahune,povrće,Povrće,raw,31,2,7,0,,,green,Excel v4,
+slanutak,Slanutak,mahunarke,Povrće,dry,364,19,60,0,,,green,Excel v4,CHECK: fat 0 (dry chickpeas ≈ 6 g fat)
+brokula,Brokula,povrće,Povrće,raw,34,3,7,0,,,green,Excel v4,
+cvjetaca,Cvjetača,povrće,Povrće,raw,25,2,5,0,,,green,Excel v4,
+koromac,Koromač,povrće,Povrće,raw,31,2,7,0,,,green,Excel v4,
+paprika,Paprika,povrće,Povrće,raw,31,1,6,0,,,green,Excel v4,
+mrkva,Mrkva,povrće,Povrće,raw,41,1,9,0,,,green,Excel v4,
+mladi-luk,Mladi luk,povrće,Povrće,raw,32,2,7,0,,,green,Excel v4,
+poriluk,Poriluk,povrće,Povrće,raw,61,2,14,0,,,green,Excel v4,
+sparoge,Šparoge,povrće,Povrće,raw,20,2,4,0,,,green,Excel v4,
+kelj,Kelj,povrće,Povrće,raw,49,4,9,0,,,green,Excel v4,
+spinat,Špinat,povrće,Povrće,raw,23,3,4,0,,,green,Excel v4,
+kukuruz-secerac,Kukuruz šećerac,povrće,Povrće,raw,86,5,17,0,,,green,Excel v4,
+blitva,Blitva,povrće,Povrće,raw,19,2,4,0,,,green,Excel v4,
+gljive,Gljive,povrće,Povrće,raw,22,3,4,0,,,green,Excel v4,
+tikvica,Tikvica,povrće,Povrće,raw,17,1,4,0,,,green,Excel v4,
+bundeva,Bundeva,povrće,Povrće,raw,26,1,7,0,,,green,Excel v4,
+rotkvica,Rotkvica,povrće,Povrće,raw,16,1,4,0,,,green,Excel v4,
+repa,Repa,povrće,Povrće,raw,28,1,7,0,,,green,Excel v4,
+cikla,Cikla,povrće,Povrće,raw,43,1,9,0,,,green,Excel v4,
+bijeli-kupus,Bijeli kupus,povrće,Povrće,raw,25,1,6,0,,,green,Excel v4,
+crveni-kupus,Crveni kupus,povrće,Povrće,raw,31,1,7,0,,,green,Excel v4,
+crveni-radic,Crveni radič,povrće,Povrće,raw,23,1,5,0,,,green,Excel v4,
+radic,Radič,povrće,Povrće,raw,23,1,5,0,,,green,Excel v4,
+zelena-salata,Zelena salata,povrće,Povrće,raw,15,1,3,0,,,green,Excel v4,
+rikola,Rikola,povrće,Povrće,raw,25,2,4,0,,,green,Excel v4,
+matovilac,Matovilac,povrće,Povrće,raw,14,2,3,0,,,green,Excel v4,
+krastavac,Krastavac,povrće,Povrće,raw,16,1,4,0,,,green,Excel v4,'200 g krastavaca' (Dodatni) merged here
+rajcica,Rajčica,povrće,Povrće,raw,18,1,4,0,,,green,Excel v4,
+cherry-rajcica,Cherry rajčica,povrće,Povrće,raw,18,1,4,0,,,green,Excel v4,
+kikiriki,Kikiriki,orašasti,Orašasti plodovi,ready,570,25,16,50,,,green,Excel v4,
+ljesnjak,Lješnjak,orašasti,Orašasti plodovi,ready,630,14,16,60,,,green,Excel v4,
+orah,Orah,orašasti,Orašasti plodovi,ready,660,15,13,65,,,green,Excel v4,
+indijski-orah,Indijski orah,orašasti,Orašasti plodovi,ready,550,18,30,43,,,green,Excel v4,
+pistacio,Pistacio,orašasti,Orašasti plodovi,ready,560,20,27,45,,,green,Excel v4,
+badem,Badem,orašasti,Orašasti plodovi,ready,580,21,21,50,,,green,Excel v4,
+brazilski-orah,Brazilski orah,orašasti,Orašasti plodovi,ready,670,15,13,68,,,green,Excel v4,
+mlijeko-28,"Mlijeko 2,8 %",mliječni,Mliječni proizvodi,ready,60,3,5,3,,1.03,green,Excel v4,
+sojino-mlijeko,Sojino mlijeko,biljni protein,Mliječni proizvodi,ready,50,3,5,2,,1.03,green,Excel v4,
+probioticki-jogurt,Probiotički jogurt,mliječni,Mliječni proizvodi,ready,70,3,5,2,,,green,Excel v4,CHECK: kcal doesn't match macros (calc 50); check the label
+tvrdi-sir,Tvrdi sir,mliječni,Mliječni proizvodi,ready,380,27,2,25,,,green,Excel v4,
+polutvrdi-sir,Polutvrdi sir,mliječni,Mliječni proizvodi,ready,350,25,2,22,,,green,Excel v4,
+mozzarella,Mozzarella,mliječni,Mliječni proizvodi,ready,250,18,1,19,,,green,USDA (approx.),Excel 120/5/1/10 was far too low; CHECK your brand's label
+proteini-prah,Proteini (whey prah),suplementi,Dodatni,ready,390,83,3,3,,,green,Excel v4,
+grcki-jogurt,Grčki jogurt,mliječni,Dodatni,ready,100,7,7,4,200,,green,Excel v4,"Merged with '200 g jogurta' (kom, same values per 200 g)"
+kikiriki-maslac,Kikiriki maslac,orašasti,Dodatni,ready,600,22,20,50,,,green,Excel v4,
+borovnice,Borovnice,voće,Dodatni,raw,57,0.7,14.5,0.3,,,green,USDA (approx.),Excel 57/0/10/0
+kiseli-krastavci,Kiseli krastavci,povrće,Dodatni,ready,12,0.5,2.4,0.2,,,green,USDA (approx.),Excel 11/1/1/1
+burrata,Burrata,mliječni,Dodatni,ready,240,10,2,20,,,green,Excel v4,
+polleo-pice,Polleo proteinsko piće,suplementi,Dodatni,ready,57,10,3,0.3,,,green,Excel v4,
+banana,Banana,voće,Dodatni,raw,89,1.1,22.8,0.3,120,,green,USDA (approx.),Excel protein 0; 1 banana (peeled) ≈ 120 g
+crveni-luk,Crveni luk,povrće,Dodatni,raw,40,1.1,9.3,0.1,110,,green,USDA (approx.),Excel protein 0; 1 onion ≈ 110 g
+pesto,Pesto,umaci,Dodatni,ready,482,5,10,46,,,green,Excel v4,
+tzatziki,Tzatziki,umaci,Dodatni,ready,116,8,11,4,200,,green,Excel v4,Excel 'Tzatziki (200 g)' per package 232/16/22/8 → per 100 g
+proteinski-puding,Proteinski puding,suplementi,Dodatni,ready,81,10,7,2,200,,green,Excel v4,
+maline,Maline,voće,Dodatni,raw,52,1.2,11.9,0.7,,,green,USDA (approx.),Excel 50/0/10/0
+grozde-bijelo,Grožđe bijelo,voće,Dodatni,raw,69,0.7,18,0.2,,,green,Excel v4,
+maslinovo-ulje,Maslinovo ulje,masti i ulja,Dodatni,ready,884,0,0,100,,0.91,green,USDA (approx.),New (1 tbsp ≈ 14 g)
+suncokretovo-ulje,Suncokretovo ulje,masti i ulja,Dodatni,ready,884,0,0,100,,0.92,green,USDA (approx.),New (1 tbsp ≈ 14 g)
+maslac,Maslac,masti i ulja,Dodatni,ready,717,0.9,0.1,81,,,green,USDA (approx.),New
