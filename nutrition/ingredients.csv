@@ -64,7 +64,7 @@ zelena-salata,Zelena salata,povrće,Povrće,raw,15,1,3,0,,,green,Excel v4,
 rikola,Rikola,povrće,Povrće,raw,25,2,4,0,,,green,Excel v4,
 matovilac,Matovilac,povrće,Povrće,raw,14,2,3,0,,,green,Excel v4,
 krastavac,Krastavac,povrće,Povrće,raw,16,1,4,0,,,green,Excel v4,'200 g krastavaca' (Dodatni) merged here
-rajcica,Rajčica,povrće,Povrće,raw,18,1,4,0,,,green,Excel v4,
+rajcica,Rajčica,povrće,Povrće,raw,18,1,4,0,120,,green,Excel v4,1 kom ≈ 120 g
 cherry-rajcica,Cherry rajčica,povrće,Povrće,raw,18,1,4,0,,,green,Excel v4,
 kikiriki,Kikiriki,orašasti,Orašasti plodovi,ready,570,25,16,50,,,green,Excel v4,
 ljesnjak,Lješnjak,orašasti,Orašasti plodovi,ready,630,14,16,60,,,green,Excel v4,
@@ -96,3 +96,11 @@ grozde-bijelo,Grožđe bijelo,voće,Dodatni,raw,69,0.7,18,0.2,,,green,Excel v4,
 maslinovo-ulje,Maslinovo ulje,masti i ulja,Dodatni,ready,884,0,0,100,,0.91,green,USDA (approx.),New (1 tbsp ≈ 14 g)
 suncokretovo-ulje,Suncokretovo ulje,masti i ulja,Dodatni,ready,884,0,0,100,,0.92,green,USDA (approx.),New (1 tbsp ≈ 14 g)
 maslac,Maslac,masti i ulja,Dodatni,ready,717,0.9,0.1,81,,,green,USDA (approx.),New
+pelati,Pelati (rajčica),povrće,Povrće,ready,21,1,3.5,0.2,400,,green,USDA (approx.),New; 1 kom = 1 limenka 400 g
+vino,Vino (crno),pića,Dodatni,ready,85,0.1,2.6,0,,0.99,green,USDA (approx.),"New; kcal mostly from alcohol, not in P/UH/M"
+cesnjak,Češnjak,začini,Dodatni,raw,149,6.4,33,0.5,5,,green,USDA (approx.),New; 1 kom = 1 režanj
+sol,Sol,začini,Dodatni,ready,0,0,0,0,,1.2,green,USDA (approx.),New
+papar,Papar,začini,Dodatni,ready,251,10,64,3.3,,0.5,green,USDA (approx.),New
+paprika-dimljena,Paprika dimljena (začin),začini,Dodatni,ready,282,14,54,13,,0.45,green,USDA (approx.),New
+persin,Peršin,začini,Dodatni,raw,36,3,6.3,0.8,,,green,USDA (approx.),New
+limun,Limun,voće,Dodatni,raw,29,1.1,9.3,0.3,100,,green,USDA (approx.),New; 1 kom ≈ 100 g
