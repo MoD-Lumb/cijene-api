@@ -66,8 +66,11 @@ jobs:
           gh release create "crawl-$DATE" "output/$DATE.zip" \
             --title "Prices $DATE" --notes-file notes.txt --latest=false
 
-      - name: Fail if a chain is missing
+      - name: Report missing chains
         if: env.MISSING != ''
         run: |
-          echo "No data for:$MISSING"
-          exit 1
+          # Warn instead of failing: the release with the other chains is still useful.
+          for chain in $MISSING; do
+            echo "::warning title=Missing data::$chain data is missing"
+            echo "⚠️ $chain data is missing" >> "$GITHUB_STEP_SUMMARY"
+          done
