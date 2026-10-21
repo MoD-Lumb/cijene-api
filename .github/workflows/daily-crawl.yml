@@ -5,7 +5,7 @@ name: Daily crawl
 
 on:
   schedule:
-    - cron: "0 6 * * *" # 06:00 UTC = 08:00 summer / 07:00 winter in Croatia
+    - cron: "0 9 * * *" # 09:00 UTC = 10:00 winter / 11:00 summer in Croatia
   workflow_dispatch:
     inputs:
       chains:
