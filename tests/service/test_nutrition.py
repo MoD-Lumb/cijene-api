@@ -20,7 +20,7 @@ def test_excel_semicolon_decimal_comma_cp1250():
         + ";;;;;;;;;;;;;\n"
     )
     ingredients, warnings = parse_ingredients(data.encode("cp1250"))
-    assert warnings == []
+    assert len(warnings) == 1 and "isn't saved as UTF-8" in warnings[0]
     assert [i.name for i in ingredients] == ["Leća", "Mlijeko 2,8 %"]
     assert ingredients[1].protein == 3.3
     assert ingredients[1].ml_to_g == 1.03
@@ -46,3 +46,10 @@ def test_missing_column():
     ingredients, warnings = parse_ingredients(b"id,name,kcal\nx,X,1\n")
     assert ingredients == []
     assert "missing column" in warnings[0]
+
+
+def test_utf8_bom_from_excel():
+    data = f"{HEADER}\nleca,Leća,x,Povrće,dry,352,26,60,0,,,green,,\n"
+    ingredients, warnings = parse_ingredients(data.encode("utf-8-sig"))
+    assert warnings == []
+    assert ingredients[0].name == "Leća"

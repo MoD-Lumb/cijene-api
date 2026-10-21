@@ -45,13 +45,17 @@ class ListIngredientsResponse(BaseModel):
     )
 
 
-def _decode(data: bytes) -> str:
-    # UTF-8 from Notepad/VS Code; Excel "CSV (comma delimited)" on Croatian
-    # Windows saves Windows-1250 instead.
+def _decode(data: bytes) -> tuple[str, str | None]:
+    # UTF-8 from Notepad/VS Code or Excel's "CSV UTF-8". Excel's plain
+    # "CSV (Comma delimited)" saves the Windows ANSI code page instead, which
+    # can't hold every Croatian letter (č, ć and đ become "?").
     try:
-        return data.decode("utf-8-sig")
+        return data.decode("utf-8-sig"), None
     except UnicodeDecodeError:
-        return data.decode("cp1250")
+        return data.decode("cp1250"), (
+            "The file isn't saved as UTF-8, so č/ć/đ may have turned into '?'. "
+            "In Excel use Save As → 'CSV UTF-8 (Comma delimited)'."
+        )
 
 
 def _number(value: str) -> float:
@@ -67,7 +71,7 @@ def parse_ingredients(data: bytes) -> tuple[list[IngredientResponse], list[str]]
     and decimal commas. A broken line is skipped and reported in the
     returned warnings instead of failing the whole list.
     """
-    text = _decode(data)
+    text, encoding_warning = _decode(data)
     lines = text.splitlines()
     if not lines:
         return [], ["The file is empty."]
@@ -83,7 +87,7 @@ def parse_ingredients(data: bytes) -> tuple[list[IngredientResponse], list[str]]
         return [], [f"Header line is missing column(s): {', '.join(missing)}."]
 
     ingredients: list[IngredientResponse] = []
-    warnings: list[str] = []
+    warnings: list[str] = [encoding_warning] if encoding_warning else []
     seen: set[str] = set()
 
     # Line 1 is the header, so data starts at line 2.

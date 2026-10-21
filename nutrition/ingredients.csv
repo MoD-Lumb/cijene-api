@@ -1,4 +1,4 @@
-id,name,food_group,meal_role,state,kcal,protein,carbs,fat,grams_per_piece,ml_to_g,preference,source,note
+﻿id,name,food_group,meal_role,state,kcal,protein,carbs,fat,grams_per_piece,ml_to_g,preference,source,note
 teletina,Teletina,meso,Proteini,raw,110,20.5,0,3,,,green,USDA (approx.),Excel 172/24/0/7.6 = cooked; replaced with raw
 junetina,Junetina,meso,Proteini,raw,137,21.4,0,5,,,green,USDA (approx.),Excel 169/28/0/6.5 = cooked; raw lean (95 %) mince
 puretina,Puretina (prsa),meso,Proteini,raw,114,23.7,0,1.5,,,green,USDA (approx.),Excel 117/24/0/2 (already ~raw)
