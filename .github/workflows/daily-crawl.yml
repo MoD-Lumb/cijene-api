@@ -1,0 +1,73 @@
+name: Daily crawl
+
+# Crawls today's prices on GitHub's servers and publishes them as a release
+# (crawl-YYYY-MM-DD with YYYY-MM-DD.zip). My PC downloads and imports them.
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC = 08:00 summer / 07:00 winter in Croatia
+  workflow_dispatch:
+    inputs:
+      chains:
+        description: "Comma-separated chains to crawl"
+        default: "konzum,lidl,spar,kaufland,plodine,studenac,tommy,dm"
+
+permissions:
+  contents: write
+
+env:
+  CHAINS: ${{ inputs.chains || 'konzum,lidl,spar,kaufland,plodine,studenac,tommy,dm' }}
+  TZ: Europe/Zagreb
+  PYTHONUTF8: "1"
+
+jobs:
+  crawl:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Crawl
+        run: |
+          echo "DATE=$(date +%F)" >> "$GITHUB_ENV"
+          uv run -m crawler.cli.crawl -c "$CHAINS" -v info output/
+
+      - name: Check which chains have data
+        run: |
+          missing=""
+          notes="Chains: $CHAINS"
+          for chain in ${CHAINS//,/ }; do
+            f="output/$DATE/$chain/prices.csv"
+            if [ -s "$f" ]; then
+              notes="$notes"$'\n'"- $chain: $(($(wc -l < "$f") - 1)) prices"
+            else
+              missing="$missing $chain"
+              notes="$notes"$'\n'"- $chain: MISSING"
+            fi
+          done
+          echo "$notes"
+          echo "$notes" > notes.txt
+          echo "MISSING=$missing" >> "$GITHUB_ENV"
+          test -f "output/$DATE.zip" || { echo "No ZIP created"; exit 1; }
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A manual re-run on the same day replaces that day's release.
+          gh release delete "crawl-$DATE" --cleanup-tag --yes 2>/dev/null || true
+          gh release create "crawl-$DATE" "output/$DATE.zip" \
+            --title "Prices $DATE" --notes-file notes.txt --latest=false
+
+      - name: Fail if a chain is missing
+        if: env.MISSING != ''
+        run: |
+          echo "No data for:$MISSING"
+          exit 1
