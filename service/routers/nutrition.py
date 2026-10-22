@@ -1,8 +1,14 @@
+import codecs
 import csv
+import hashlib
+import io
 import logging
+import os
+import re
+import unicodedata
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from service.routers.auth import RequireAuth
@@ -11,7 +17,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Nutrition"], dependencies=[RequireAuth])
 
-NUTRITION_DIR = Path(__file__).resolve().parents[2] / "nutrition"
+# The repo's nutrition/ folder; NUTRITION_DIR points a test instance at a copy.
+NUTRITION_DIR = Path(
+    os.getenv("NUTRITION_DIR", str(Path(__file__).resolve().parents[2] / "nutrition"))
+)
 INGREDIENTS_CSV = NUTRITION_DIR / "ingredients.csv"
 RECIPES_CSV = NUTRITION_DIR / "recipes.csv"
 
@@ -204,6 +213,25 @@ class ListRecipesResponse(BaseModel):
     warnings: list[str] = Field(
         ..., description="Lines that were skipped or fixed, with the reason."
     )
+    version: str = Field(..., description="Version of recipes.csv, sent back on save.")
+
+
+class RecipeIn(BaseModel):
+    """A recipe to save into recipes.csv."""
+
+    name: str = Field(..., description="Recipe name.")
+    meal: str = Field(..., description="Doručak, Snack, Ručak or Večera.")
+    link: str = Field("", description="Link to the original recipe.")
+    method: list[str] = Field(default_factory=list, description="Preparation steps.")
+    items: list[RecipeItem] = Field(..., description="Ingredients per person.")
+    version: str = Field(..., description="The version the page loaded.")
+
+
+class SavedRecipeResponse(BaseModel):
+    """Result of saving or deleting a recipe."""
+
+    id: str = Field(..., description="Recipe id.")
+    version: str = Field(..., description="New version of recipes.csv.")
 
 
 def parse_recipes(
@@ -281,6 +309,210 @@ def _is_number(value: str) -> bool:
         return False
 
 
+def file_version(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()[:16]
+
+
+def _split_lines(data: bytes) -> tuple[list[str], str, str, bool, bool]:
+    """Raw lines of a CSV file plus its delimiter, line ending, BOM and final newline."""
+    text = data.decode("utf-8-sig")
+    newline = "\r\n" if "\r\n" in text else "\n"
+    lines = text.split(newline)
+    final_newline = lines[-1] == ""
+    if final_newline:
+        lines.pop()
+    header = lines[0] if lines else ""
+    delimiter = ";" if header.count(";") > header.count(",") else ","
+    return lines, delimiter, newline, data.startswith(codecs.BOM_UTF8), final_newline
+
+
+def _line_recipe_id(line: str, delimiter: str, column: int) -> str:
+    values = next(csv.reader([line], delimiter=delimiter), [])
+    return values[column].strip() if len(values) > column else ""
+
+
+def recipe_ids(data: bytes) -> list[str]:
+    """Recipe ids in file order, read from the raw lines (also broken ones)."""
+    lines, delimiter, *_ = _split_lines(data)
+    header = next(csv.reader([lines[0]], delimiter=delimiter), []) if lines else []
+    fields = [f.strip().lower() for f in header]
+    if "recipe_id" not in fields:
+        return []
+    column = fields.index("recipe_id")
+    ids = [_line_recipe_id(line, delimiter, column) for line in lines[1:]]
+    return list(dict.fromkeys(i for i in ids if i))
+
+
+def write_recipe(
+    data: bytes, recipe_id: str, new_lines: list[dict[str, str]] | None
+) -> bytes:
+    """
+    Replace one recipe's lines in recipes.csv, add them at the end if it's new,
+    or remove them (new_lines=None).
+
+    Works on the raw lines: every other line stays byte for byte as it was,
+    so `git diff` shows only this recipe. Keeps the BOM, separator and line
+    endings of the file.
+    """
+    lines, delimiter, newline, bom, final_newline = _split_lines(data)
+    fields = [
+        f.strip().lower() for f in next(csv.reader([lines[0]], delimiter=delimiter))
+    ]
+    column = fields.index("recipe_id")
+
+    written = []
+    for values in new_lines or []:
+        buf = io.StringIO()
+        csv.writer(buf, delimiter=delimiter, lineterminator="").writerow(
+            [values.get(f, "") for f in fields]
+        )
+        written.append(buf.getvalue())
+
+    out, placed = [lines[0]], False
+    for line in lines[1:]:
+        if _line_recipe_id(line, delimiter, column) == recipe_id:
+            if not placed:
+                out.extend(written)  # in place of the recipe's first line
+                placed = True
+            continue
+        out.append(line)
+    if not placed:
+        out.extend(written)
+
+    text = newline.join(out) + (newline if final_newline else "")
+    return (codecs.BOM_UTF8 if bom else b"") + text.encode("utf-8")
+
+
+def _qty_text(qty: float) -> str:
+    return str(int(qty)) if qty == int(qty) else str(round(qty, 3))
+
+
+def recipe_lines(recipe_id: str, recipe: RecipeIn) -> list[dict[str, str]]:
+    """CSV lines of a recipe: link and method only on its first line."""
+    return [
+        {
+            "recipe_id": recipe_id,
+            "recipe": recipe.name,
+            "meal": recipe.meal,
+            "person": item.person,
+            "ingredient_id": item.ingredient_id,
+            "qty": "" if item.qty is None else _qty_text(item.qty),
+            "unit": "" if item.qty is None else item.unit,
+            "link": recipe.link if n == 0 else "",
+            "method": " | ".join(recipe.method) if n == 0 else "",
+        }
+        for n, item in enumerate(recipe.items)
+    ]
+
+
+def _slug(text: str) -> str:
+    plain = unicodedata.normalize("NFD", text.lower().replace("đ", "d"))
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", "-", plain).strip("-")
+
+
+def next_recipe_id(meal: str, existing: list[str]) -> str:
+    """Meal slug + next free number, like the ids in the file: rucak-10, snack-5."""
+    prefix = _slug(meal) if meal and meal != "Ostalo" else "recept"
+    prefix = prefix or "recept"
+    numbers = [
+        int(m.group(1)) for i in existing if (m := re.fullmatch(rf"{prefix}-(\d+)", i))
+    ]
+    return f"{prefix}-{max(numbers, default=0) + 1}"
+
+
+def clean_recipe(recipe: RecipeIn, ingredient_ids: set[str]) -> RecipeIn:
+    """Check a recipe from the page; raises 422 with a readable reason."""
+
+    def bad(reason: str) -> HTTPException:
+        return HTTPException(status_code=422, detail=reason)
+
+    name = " ".join(recipe.name.split())
+    if not name:
+        raise bad("The recipe needs a name.")
+    if not recipe.items:
+        raise bad("Add at least one ingredient.")
+    items = []
+    for item in recipe.items:
+        if item.ingredient_id not in ingredient_ids:
+            raise bad(f"Ingredient '{item.ingredient_id}' is not in ingredients.csv.")
+        unit = UNITS.get(item.unit.strip().lower(), "")
+        if item.qty is not None:
+            if item.qty < 0:
+                raise bad("Quantities can't be negative.")
+            if not unit:
+                raise bad(f"Unknown unit '{item.unit}' (use g, kom, ml, dl or žlica).")
+        items.append(
+            RecipeItem(
+                person=item.person.strip(),
+                ingredient_id=item.ingredient_id,
+                qty=item.qty,
+                unit=unit if item.qty is not None else "",
+            )
+        )
+    return RecipeIn(
+        name=name,
+        meal=recipe.meal.strip() or "Ostalo",
+        link=recipe.link.strip(),
+        method=[s.strip().replace("|", "/") for s in recipe.method if s.strip()],
+        items=items,
+        version=recipe.version,
+    )
+
+
+def change_recipe(
+    recipes_csv: Path,
+    ingredients_csv: Path,
+    recipe_id: str | None,
+    recipe: RecipeIn | None,
+    version: str,
+) -> SavedRecipeResponse:
+    """
+    Add (recipe_id None), replace or delete (recipe None) one recipe in
+    recipes.csv, after checking nobody changed the file in the meantime.
+    """
+    data = recipes_csv.read_bytes()
+    if file_version(data) != version:
+        raise HTTPException(
+            status_code=409,
+            detail="recipes.csv changed since this page loaded it (edited in "
+            "Notepad, or saved from another tab). Copy your changes, reload the "
+            "page and try again.",
+        )
+    if _decode(data)[1]:
+        raise HTTPException(
+            status_code=409,
+            detail="recipes.csv isn't saved as UTF-8, so the page won't write "
+            "into it. Open it in Notepad, choose Save As → Encoding UTF-8, "
+            "then reload the page.",
+        )
+
+    existing = recipe_ids(data)
+    if recipe_id is not None and recipe_id not in existing:
+        raise HTTPException(status_code=404, detail=f"No recipe '{recipe_id}'.")
+    lines = None
+    if recipe is not None:
+        ingredients, _ = parse_ingredients(ingredients_csv.read_bytes())
+        recipe = clean_recipe(recipe, {i.id for i in ingredients})
+        recipe_id = recipe_id or next_recipe_id(recipe.meal, existing)
+        lines = recipe_lines(recipe_id, recipe)
+    assert recipe_id is not None
+
+    new = write_recipe(data, recipe_id, lines)
+    tmp = recipes_csv.with_name(recipes_csv.name + ".tmp")
+    try:
+        tmp.write_bytes(new)
+        tmp.replace(recipes_csv)
+    except PermissionError:
+        tmp.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=409,
+            detail="Couldn't write recipes.csv. Is it open in Excel? "
+            "Close it there and save again.",
+        )
+    return SavedRecipeResponse(id=recipe_id, version=file_version(new))
+
+
 @router.get("/ingredients/", summary="List ingredients with macros")
 async def list_ingredients() -> ListIngredientsResponse:
     """
@@ -304,9 +536,37 @@ async def list_recipes() -> ListRecipesResponse:
     The file is read on every request; broken lines are listed in `warnings`.
     """
     ingredients, _ = parse_ingredients(INGREDIENTS_CSV.read_bytes())
-    recipes, warnings = parse_recipes(
-        RECIPES_CSV.read_bytes(), {i.id for i in ingredients}
-    )
+    data = RECIPES_CSV.read_bytes()
+    recipes, warnings = parse_recipes(data, {i.id for i in ingredients})
     for w in warnings:
         logger.warning(f"recipes.csv: {w}")
-    return ListRecipesResponse(recipes=recipes, warnings=warnings)
+    return ListRecipesResponse(
+        recipes=recipes, warnings=warnings, version=file_version(data)
+    )
+
+
+@router.post("/recipes/", summary="Add a recipe to recipes.csv")
+async def create_recipe(recipe: RecipeIn) -> SavedRecipeResponse:
+    """
+    Add a recipe at the end of nutrition/recipes.csv. The id is the meal plus
+    the next free number (e.g. rucak-10). `version` must be the one from
+    GET /v1/recipes/, otherwise 409.
+    """
+    return change_recipe(RECIPES_CSV, INGREDIENTS_CSV, None, recipe, recipe.version)
+
+
+@router.put("/recipes/{recipe_id}", summary="Replace a recipe in recipes.csv")
+async def update_recipe(recipe_id: str, recipe: RecipeIn) -> SavedRecipeResponse:
+    """
+    Replace the lines of one recipe in nutrition/recipes.csv, in place.
+    All other lines stay exactly as they were.
+    """
+    return change_recipe(
+        RECIPES_CSV, INGREDIENTS_CSV, recipe_id, recipe, recipe.version
+    )
+
+
+@router.delete("/recipes/{recipe_id}", summary="Delete a recipe from recipes.csv")
+async def delete_recipe(recipe_id: str, version: str) -> SavedRecipeResponse:
+    """Remove all lines of one recipe from nutrition/recipes.csv."""
+    return change_recipe(RECIPES_CSV, INGREDIENTS_CSV, recipe_id, None, version)

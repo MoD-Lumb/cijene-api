@@ -1,4 +1,16 @@
-from service.routers.nutrition import parse_ingredients, parse_recipes
+import pytest
+from fastapi import HTTPException
+
+from service.routers.nutrition import (
+    RecipeIn,
+    RecipeItem,
+    change_recipe,
+    file_version,
+    next_recipe_id,
+    parse_ingredients,
+    parse_recipes,
+    recipe_ids,
+)
 
 HEADER = "id,name,food_group,meal_role,state,kcal,protein,carbs,fat,grams_per_piece,ml_to_g,preference,source,note"
 
@@ -97,3 +109,127 @@ def test_recipe_bad_lines_are_skipped():
     assert "not in ingredients.csv" in warnings[0]
     assert "not a number" in warnings[1]
     assert "unknown unit" in warnings[2]
+
+
+# ---- saving recipes from the page ----
+
+INGREDIENTS = (
+    f"{HEADER}\n"
+    "piletina,Piletina,meso,Proteini,raw,120,23,0,2.6,,,green,,\n"
+    "riza,Riža,žitarice,Ugljikohidrati,dry,360,7,79,0.6,,,green,,\n"
+    "jaje,Jaje,jaja,Proteini,raw,143,12.6,0.7,9.5,55,,green,,\n"
+)
+RECIPES = (
+    f"{RECIPE_HEADER}\r\n"
+    'rucak-1,"Piletina, riža",Ručak,Frane,piletina,200,g,http://x,Korak 1 | Korak 2\r\n'
+    'rucak-1,"Piletina, riža",Ručak,Frane,riza,50,g,,\r\n'
+    "snack-1,Jaja,Snack,Frane,jaje,2,kom,,\r\n"
+    "broken,line,with,too,many,values,1,g,,,,extra\r\n"
+    "rucak-2,Riža,Ručak,Marinela,riza,60,g,,\r\n"
+)
+
+
+@pytest.fixture
+def files(tmp_path):
+    ing, rec = tmp_path / "ingredients.csv", tmp_path / "recipes.csv"
+    ing.write_text(INGREDIENTS, encoding="utf-8")
+    rec.write_bytes(RECIPES.encode("utf-8-sig"))
+    return rec, ing
+
+
+def _recipe(version, name="Piletina, riža", meal="Ručak", items=None, **kw):
+    items = items or [
+        RecipeItem(person="Marinela", ingredient_id="piletina", qty=150, unit="g")
+    ]
+    return RecipeIn(name=name, meal=meal, items=items, version=version, **kw)
+
+
+def _version(rec):
+    return file_version(rec.read_bytes())
+
+
+def test_edit_replaces_only_that_recipe(files):
+    rec, ing = files
+    items = [
+        RecipeItem(person="Frane", ingredient_id="piletina", qty=180, unit="g"),
+        RecipeItem(person="Marinela", ingredient_id="piletina", qty=150, unit="g"),
+        RecipeItem(person="", ingredient_id="riza", qty=None, unit=""),
+    ]
+    v = _version(rec)
+    recipe = _recipe(v, items=items, link="http://x", method=["Korak 1", "Korak 2"])
+    saved = change_recipe(rec, ing, "rucak-1", recipe, v)
+    assert saved.id == "rucak-1" and saved.version == _version(rec)
+
+    raw = rec.read_bytes()
+    assert raw.startswith(b"\xef\xbb\xbf")  # BOM kept
+    lines = raw.decode("utf-8-sig").split("\r\n")  # line endings kept
+    old = RECIPES.split("\r\n")
+    assert lines[0] == old[0]
+    assert lines[1] == (
+        'rucak-1,"Piletina, riža",Ručak,Frane,piletina,180,g,http://x,Korak 1 | Korak 2'
+    )
+    assert lines[2] == 'rucak-1,"Piletina, riža",Ručak,Marinela,piletina,150,g,,'
+    assert lines[3] == 'rucak-1,"Piletina, riža",Ručak,,riza,,,,'
+    assert lines[4:] == old[3:]  # every other line byte for byte, broken one too
+
+    recipes, _ = parse_recipes(raw, {"piletina", "riza", "jaje"})
+    r = recipes[0]
+    assert r.name == "Piletina, riža" and r.method == ["Korak 1", "Korak 2"]
+    assert [(i.person, i.qty) for i in r.items] == [
+        ("Frane", 180),
+        ("Marinela", 150),
+        ("", None),
+    ]
+
+
+def test_create_appends_with_next_id(files):
+    rec, ing = files
+    v = _version(rec)
+    saved = change_recipe(rec, ing, None, _recipe(v, name="Nova"), v)
+    assert saved.id == "rucak-3"
+    text = rec.read_bytes().decode("utf-8-sig")
+    assert text.endswith("rucak-3,Nova,Ručak,Marinela,piletina,150,g,,\r\n")
+    assert recipe_ids(rec.read_bytes())[-1] == "rucak-3"
+
+
+def test_delete(files):
+    rec, ing = files
+    change_recipe(rec, ing, "rucak-1", None, _version(rec))
+    assert recipe_ids(rec.read_bytes()) == ["snack-1", "broken", "rucak-2"]
+
+
+def test_changed_file_is_refused(files):
+    rec, ing = files
+    old = _version(rec)
+    rec.write_bytes(rec.read_bytes() + b"snack-2,X,Snack,Frane,jaje,1,kom,,\r\n")
+    with pytest.raises(HTTPException) as e:
+        change_recipe(rec, ing, "rucak-1", _recipe(old), old)
+    assert e.value.status_code == 409
+
+
+def test_unknown_ingredient_is_refused(files):
+    rec, ing = files
+    v = _version(rec)
+    bad = [RecipeItem(person="Frane", ingredient_id="nepoznato", qty=1, unit="g")]
+    with pytest.raises(HTTPException) as e:
+        change_recipe(rec, ing, "rucak-1", _recipe(v, items=bad), v)
+    assert e.value.status_code == 422 and "nepoznato" in e.value.detail
+    assert rec.read_bytes() == RECIPES.encode("utf-8-sig")  # untouched
+
+
+def test_semicolon_file(tmp_path):
+    ing, rec = tmp_path / "ingredients.csv", tmp_path / "recipes.csv"
+    ing.write_text(INGREDIENTS, encoding="utf-8")
+    header = RECIPE_HEADER.replace(",", ";")
+    rec.write_text(f"{header}\nr1;Jaja;Snack;Frane;jaje;2;kom;;\n", encoding="utf-8")
+    items = [RecipeItem(person="Frane", ingredient_id="jaje", qty=2.5, unit="KOM")]
+    v = _version(rec)
+    change_recipe(rec, ing, "r1", _recipe(v, "Jaja, 2", "Snack", items), v)
+    lines = rec.read_text(encoding="utf-8").splitlines()
+    assert lines[1] == "r1;Jaja, 2;Snack;Frane;jaje;2.5;kom;;"
+
+
+def test_next_recipe_id():
+    assert next_recipe_id("Ručak", ["rucak-1", "rucak-9", "snack-2"]) == "rucak-10"
+    assert next_recipe_id("Doručak", []) == "dorucak-1"
+    assert next_recipe_id("Ostalo", ["recept-1"]) == "recept-2"
